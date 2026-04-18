@@ -244,7 +244,7 @@ class Dice {
     this.isRolling = false;
   }
 
-  async roll() {
+  async roll(biasedSix = false) {
     if (this.isRolling) return null;
     this.isRolling = true;
     
@@ -260,7 +260,14 @@ class Dice {
     clearInterval(shuffleInt);
     this.diceContainer.classList.remove('rolling');
 
-    const result = Math.floor(Math.random() * 6) + 1;
+    // Biased roll: treat a pool of 8 equally-likely outcomes where two of them are 6
+    let result;
+    if (biasedSix) {
+      const pool = [1, 2, 3, 4, 5, 6, 6]; // 2/7 chance of 6 (close enough to 2/6)
+      result = pool[Math.floor(Math.random() * pool.length)];
+    } else {
+      result = Math.floor(Math.random() * 6) + 1;
+    }
     this.diceFace.className = `dice-face show-${result}`;
 
     await new Promise(resolve => setTimeout(resolve, 300));
@@ -339,7 +346,7 @@ class Game {
     // Human is Red, playing from bottom left.
     // Turn order clockwise: Yellow, Blue, Green, Red
     this.humanColor = 'red';
-    this.turnIndex = 3; // start with red to let human play first immediately
+    this.turnIndex = 0; // COLORS[0] === 'red', so red always goes first
     this.diceValue = null;
     this.hasExtraTurn = false;
     
@@ -419,7 +426,13 @@ class Game {
   }
 
   async performRoll() {
-    this.diceValue = await this.dice.roll();
+    // Biased roll for human when all pieces are still in base: 2/6 chance of a 6
+    let biasedSix = false;
+    if (this.isHumanTurn) {
+      const allInBase = this.state[this.humanColor].every(t => t.steps === 0);
+      biasedSix = allInBase;
+    }
+    this.diceValue = await this.dice.roll(biasedSix);
     const color = this.currentColor;
     
     if (this.diceValue === 6) {
@@ -544,7 +557,7 @@ class Game {
     document.getElementById('play-again-btn').onclick = () => {
       modal.classList.add('hidden');
       this.initTokens();
-      this.turnIndex = 3; // Reset to red
+      this.turnIndex = 0; // Reset to red (COLORS[0])
       this.startGame();
     };
   }
