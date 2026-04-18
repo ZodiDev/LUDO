@@ -190,19 +190,25 @@ class Board {
       });
     });
 
+    // Offset patterns for stacked tokens (supports up to 8)
+    const OFFSETS = [
+      { dx: -1, dy: -1 }, { dx:  1, dy:  1 },
+      { dx: -1, dy:  1 }, { dx:  1, dy: -1 },
+      { dx:  0, dy: -1 }, { dx:  0, dy:  1 },
+      { dx: -1, dy:  0 }, { dx:  1, dy:  0 }
+    ];
+
     for (let key in posMap) {
       const tokens = posMap[key];
       if (tokens.length > 1) {
-        const offset = tokens.length > 2 ? 0.2 : 0.15;
-        const scale = tokens.length > 2 ? 0.6 : 0.8;
+        const scale = tokens.length > 3 ? 0.55 : (tokens.length > 2 ? 0.6 : 0.8);
+        const spread = tokens.length > 3 ? 0.22 : (tokens.length > 2 ? 0.2 : 0.15);
         
         tokens.forEach((t, index) => {
           const mainDiv = t.tokenDiv;
-          let dx = 0; let dy = 0;
-          if (index === 0) { dx = -offset; dy = -offset; }
-          if (index === 1) { dx = offset; dy = offset; }
-          if (index === 2) { dx = -offset; dy = offset; }
-          if (index === 3) { dx = offset; dy = -offset; }
+          const off = OFFSETS[index % OFFSETS.length];
+          const dx = off.dx * spread;
+          const dy = off.dy * spread;
           
           mainDiv.style.setProperty('--cell-x', t.x);
           mainDiv.style.setProperty('--cell-y', t.y);
@@ -215,7 +221,7 @@ class Board {
           mainDiv.style.setProperty('--cell-x', t.x);
           mainDiv.style.setProperty('--cell-y', t.y);
           mainDiv.style.transform = `translate(calc(var(--cell-x) * 100%), calc(var(--cell-y) * 100%)) scale(1)`;
-          mainDiv.style.zIndex = Math.floor(Math.random() * 10) + 10;
+          mainDiv.style.zIndex = 10;
         });
       }
     }
@@ -228,8 +234,10 @@ class Board {
         if (!tokenDiv) continue;
         if (c === color && validIndices.includes(i)) {
           tokenDiv.classList.add('selectable');
+          tokenDiv.style.zIndex = 200; // always on top when selectable
         } else {
           tokenDiv.classList.remove('selectable');
+          // Don't reset z-index here; updateTokens handles it
         }
       }
     });
@@ -293,19 +301,34 @@ class Bot {
       const currentSteps = token.steps;
       let targetSteps = currentSteps;
       
+      // --- Bringing a piece out of base ---
       if (currentSteps === 0 && roll === 6) {
         targetSteps = 1;
-        score += 50;
+        score += 70;
       } else {
         targetSteps = currentSteps + roll;
       }
       
+      // --- Reaching home (highest priority) ---
       if (targetSteps === 57) {
-        score += 100;
+        score += 500;
+      }
+
+      // --- Entering the safe home stretch ---
+      if (targetSteps >= 52 && targetSteps <= 56 && currentSteps < 52) {
+        score += 40;
       }
       
+      // --- Board interactions ---
       if (targetSteps >= 1 && targetSteps <= 51) {
         const destIndex = (COLOR_CONFIG[color].startIndex + targetSteps - 1) % 52;
+
+        // Landing on a safe spot is good
+        if (SAFE_SPOTS.includes(destIndex)) {
+          score += 15;
+        }
+
+        // Capture check
         if (!SAFE_SPOTS.includes(destIndex)) {
           let canCapture = false;
           COLORS.forEach(c => {
@@ -321,12 +344,18 @@ class Bot {
             }
           });
           if (canCapture) {
-            score += 200;
+            score += 300;
           }
         }
       }
       
-      score += targetSteps;
+      // --- Mild progress bonus that DIMINISHES for advanced pieces ---
+      // This prevents always choosing the furthest piece
+      score += Math.max(0, 20 - currentSteps * 0.3);
+
+      // --- Randomness for variety ---
+      score += Math.random() * 25;
+      
       bestScores.push({ index, score });
     });
     
@@ -349,6 +378,7 @@ class Game {
     this.turnIndex = 0; // COLORS[0] === 'red', so red always goes first
     this.diceValue = null;
     this.hasExtraTurn = false;
+    this.isMoving = false; // guard against double-clicks during animation
     
     this.state = {};
     this.initTokens();
@@ -405,6 +435,7 @@ class Game {
   }
 
   startTurn() {
+    this.isMoving = false; // allow new interactions
     this.updateUI();
     const color = this.currentColor;
     this.board.setSelectable(color, []);
@@ -422,6 +453,7 @@ class Game {
   async handleRollClick() {
     if (!this.isHumanTurn) return;
     if (this.diceValue !== null) return; // already rolled
+    if (this.isMoving) return; // animation in progress
     await this.performRoll();
   }
 
@@ -459,6 +491,7 @@ class Game {
     }
     else {
       if (validTokens.length === 1) {
+         this.isMoving = true;
          setTimeout(async () => {
            await this.moveToken(color, validTokens[0]);
          }, 300);
@@ -469,11 +502,13 @@ class Game {
   }
 
   async handleTokenClick(color, index) {
+    if (this.isMoving) return; // prevent double-click during animation
     if (!this.isHumanTurn) return;
     if (color !== this.currentColor) return;
     
     const validTokens = this.getValidMoves(color, this.diceValue);
     if (validTokens.includes(index)) {
+      this.isMoving = true;
       this.board.setSelectable(color, []);
       await this.moveToken(color, index);
     }
@@ -651,10 +686,13 @@ document.addEventListener('DOMContentLoaded', () => {
   let game = new Game(board, dice, bot);
   game.startGame();
 
-  document.getElementById('reset-btn').addEventListener('click', () => {
-    game = new Game(board, dice, bot);
-    game.startGame();
-  });
+  const resetBtn = document.getElementById('reset-btn');
+  if (resetBtn) {
+    resetBtn.addEventListener('click', () => {
+      game = new Game(board, dice, bot);
+      game.startGame();
+    });
+  }
 
   // --- Debug shortcuts ---
   document.addEventListener('keydown', (e) => {

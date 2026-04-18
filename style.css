@@ -411,6 +411,11 @@ body {
   background: radial-gradient(circle at 42% 38%, var(--red) 0%, var(--red-token) 100%);
 }
 
+.token.selectable {
+  z-index: 200 !important;
+  cursor: pointer;
+}
+
 .token.selectable .token-inner {
   animation: bounce 0.5s infinite alternate;
   cursor: pointer;
