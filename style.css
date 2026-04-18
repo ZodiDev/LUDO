@@ -1,0 +1,466 @@
+:root {
+  /* Colors based on the screenshot */
+  --bg-color: #61adc9;
+  --board-bg: #ffffff;
+  
+  --yellow: #feca34;
+  --yellow-inner: #fadd70;
+  --yellow-token: #f6a111;
+  
+  --blue: #2abff8;
+  --blue-inner: #87d6f5;
+  --blue-token: #1994d5;
+  
+  --red: #f35653;
+  --red-inner: #f69b9b;
+  --red-token: #df3131;
+  
+  --green: #83cd52;
+  --green-inner: #a5d880;
+  --green-token: #5da02c;
+
+  --border-color: #2e3436;
+  
+  --board-size: min(100vw - 16px, 100vh - 180px);
+  --cell-size: calc((var(--board-size) - 8px) / 15); /* 8px for borders */
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Roboto', sans-serif;
+}
+
+body {
+  background-color: var(--bg-color);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  touch-action: manipulation;
+}
+
+.app-container {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px 0;
+}
+
+/* Dice + Roll button positioned bottom-right below board */
+.bottom-controls {
+  width: 100%;
+  max-width: var(--board-size);
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  padding: 0 4px;
+  min-height: 48px;
+}
+
+.roll-btn {
+  padding: 10px 24px;
+  background-color: var(--red);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 800;
+  font-size: 16px;
+  cursor: pointer;
+  box-shadow: 0 4px 0 rgba(0,0,0,0.2);
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.roll-btn:active:not(:disabled) {
+  transform: translateY(4px);
+  box-shadow: none;
+}
+
+.roll-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: translateY(4px);
+}
+
+.dice-container {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  background-color: white;
+  border: 4px solid var(--border-color);
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 rgba(0,0,0,0.2);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.dice-container.rolling {
+  animation: shake 0.4s infinite;
+}
+
+.dice-face {
+  width: 100%;
+  height: 100%;
+  padding: 4px;
+  display: grid;
+  grid-template-areas:
+    "dot1 . dot2"
+    "dot3 dot4 dot5"
+    "dot6 . dot7";
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: 1fr 1fr 1fr;
+  place-items: center;
+  /* dots */
+}
+
+@keyframes shake {
+  0% { transform: rotate(0deg) scale(1.1); }
+  25% { transform: rotate(15deg) scale(1.1); }
+  50% { transform: rotate(0deg) scale(1.1); }
+  75% { transform: rotate(-15deg) scale(1.1); }
+  100% { transform: rotate(0deg) scale(1.1); }
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  background-color: var(--border-color);
+  border-radius: 50%;
+  display: none; /* hidden by default */
+}
+
+/* Dots layout classes */
+/* 1 */
+.show-1 .dot:nth-child(4) { display: block; grid-area: dot4; }
+/* 2 */
+.show-2 .dot:nth-child(1) { display: block; grid-area: dot1; }
+.show-2 .dot:nth-child(7) { display: block; grid-area: dot7; }
+/* 3 */
+.show-3 .dot:nth-child(1) { display: block; grid-area: dot1; }
+.show-3 .dot:nth-child(4) { display: block; grid-area: dot4; }
+.show-3 .dot:nth-child(7) { display: block; grid-area: dot7; }
+/* 4 */
+.show-4 .dot:nth-child(1) { display: block; grid-area: dot1; }
+.show-4 .dot:nth-child(2) { display: block; grid-area: dot2; }
+.show-4 .dot:nth-child(6) { display: block; grid-area: dot6; }
+.show-4 .dot:nth-child(7) { display: block; grid-area: dot7; }
+/* 5 */
+.show-5 .dot:nth-child(1) { display: block; grid-area: dot1; }
+.show-5 .dot:nth-child(2) { display: block; grid-area: dot2; }
+.show-5 .dot:nth-child(4) { display: block; grid-area: dot4; }
+.show-5 .dot:nth-child(6) { display: block; grid-area: dot6; }
+.show-5 .dot:nth-child(7) { display: block; grid-area: dot7; }
+/* 6 */
+.show-6 .dot:nth-child(1) { display: block; grid-area: dot1; }
+.show-6 .dot:nth-child(2) { display: block; grid-area: dot2; }
+.show-6 .dot:nth-child(3) { display: block; grid-area: dot3; }
+.show-6 .dot:nth-child(5) { display: block; grid-area: dot5; }
+.show-6 .dot:nth-child(6) { display: block; grid-area: dot6; }
+.show-6 .dot:nth-child(7) { display: block; grid-area: dot7; }
+
+/* The Board */
+.board-wrapper {
+  position: relative;
+  width: var(--board-size);
+  height: var(--board-size);
+  background-color: var(--board-bg);
+  border: 4px solid var(--border-color);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+}
+
+.board {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+#cells-layer {
+  display: grid;
+  grid-template-columns: repeat(15, 1fr);
+  grid-template-rows: repeat(15, 1fr);
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.cell {
+  border: 1px solid var(--border-color);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+}
+
+/* Home Paths */
+.path-red { background-color: var(--red); }
+.path-green { background-color: var(--green); }
+.path-yellow { background-color: var(--yellow); }
+.path-blue { background-color: var(--blue); }
+
+/* Start and Safe spaces (with stars) */
+.start-red { background-color: var(--red); }
+.start-green { background-color: var(--green); }
+.start-yellow { background-color: var(--yellow); }
+.start-blue { background-color: var(--blue); }
+
+
+
+.start-yellow::after, .start-blue::after, .start-green::after, .start-red::after {
+  content: '';
+  position: absolute;
+  width: 60%;
+  height: 60%;
+  background-color: white;
+  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+}
+
+
+
+/* Center Polygon (Tesselation similar to image) */
+.center-home {
+  grid-column: 7 / 10;
+  grid-row: 7 / 10;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  z-index: 1; 
+}
+/* We can use conic-gradient for the center cross */
+.center-home::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  /* Top is Blue, Right is Green, Bottom is Red, Left is Yellow in new config */
+  background: conic-gradient(
+    from 45deg,
+    var(--green) 0deg 90deg,
+    var(--red) 90deg 180deg,
+    var(--yellow) 180deg 270deg,
+    var(--blue) 270deg 360deg
+  );
+}
+.center-home::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  /* Add black X lines */
+  background: linear-gradient(to bottom right, transparent calc(50% - 1.5px), var(--border-color) calc(50% - 1.5px), var(--border-color) calc(50% + 1.5px), transparent calc(50% + 1.5px)),
+              linear-gradient(to top right, transparent calc(50% - 1.5px), var(--border-color) calc(50% - 1.5px), var(--border-color) calc(50% + 1.5px), transparent calc(50% + 1.5px));
+}
+
+/* Base Areas */
+.base-yellow { grid-area: 1 / 1 / 7 / 7; background-color: var(--yellow); border-right: 4px solid var(--border-color); border-bottom: 4px solid var(--border-color); }
+.base-blue { grid-area: 1 / 10 / 7 / 16; background-color: var(--blue); border-left: 4px solid var(--border-color); border-bottom: 4px solid var(--border-color); }
+.base-green { grid-area: 10 / 10 / 16 / 16; background-color: var(--green); border-left: 4px solid var(--border-color); border-top: 4px solid var(--border-color); }
+.base-red { grid-area: 10 / 1 / 16 / 7; background-color: var(--red); border-right: 4px solid var(--border-color); border-top: 4px solid var(--border-color); }
+
+.base-yellow, .base-blue, .base-green, .base-red {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  z-index: 2; /* Cover grid lines */
+}
+
+.base-inner {
+  width: 68%;
+  height: 68%;
+  border-radius: 16px;
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  place-items: center;
+  padding: 8%;
+  gap: 4%;
+}
+
+.spot-circle {
+  width: calc(var(--cell-size) * 0.9);
+  height: calc(var(--cell-size) * 0.9);
+  max-width: 100%;
+  max-height: 100%;
+  border-radius: 50%;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.35);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.spot-circle-yellow { background-color: var(--yellow-token); }
+.spot-circle-blue { background-color: var(--blue-token); }
+.spot-circle-green { background-color: var(--green-token); }
+.spot-circle-red { background-color: var(--red-token); }
+
+.base-yellow .base-inner { background-color: var(--yellow-inner); }
+.base-blue .base-inner { background-color: var(--blue-inner); }
+.base-green .base-inner { background-color: var(--green-inner); }
+.base-red .base-inner { background-color: var(--red-inner); }
+
+/* Tokens Layer */
+#tokens-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.token {
+  transition: transform 0.25s linear;
+  pointer-events: auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10;
+}
+
+#tokens-layer .token {
+  position: absolute;
+  width: calc(100% / 15);
+  height: calc(100% / 15);
+  top: 0;
+  left: 0;
+}
+
+.spot-circle .token {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  top: auto;
+  left: auto;
+  transform: none !important;
+}
+
+/* Look and feel of tokens - 3D sphere/pawn style */
+.token-inner {
+  width: 75%;
+  height: 75%;
+  border-radius: 50%;
+  border: 2px solid var(--border-color);
+  position: relative;
+  box-shadow: 0 3px 0 rgba(0,0,0,0.5), 0 5px 6px rgba(0,0,0,0.2);
+  overflow: hidden;
+}
+
+/* Specular highlight on top of token */
+.token-inner::before {
+  content: '';
+  position: absolute;
+  top: 6%;
+  left: 18%;
+  width: 38%;
+  height: 24%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0) 100%);
+  z-index: 3;
+}
+
+/* Inner circle - top cap of the pawn */
+.token-inner::after {
+  content: '';
+  position: absolute;
+  top: 18%;
+  left: 18%;
+  width: 64%;
+  height: 64%;
+  border-radius: 50%;
+  border: 1.5px solid rgba(0,0,0,0.3);
+  box-shadow: inset 0 -2px 3px rgba(0,0,0,0.15), inset 0 2px 4px rgba(255,255,255,0.35);
+}
+
+/* Color-specific token styles with gradients for 3D effect */
+.token.yellow .token-inner {
+  background: radial-gradient(circle at 42% 38%, #ffd54f 0%, var(--yellow-token) 65%, #c47a00 100%);
+}
+.token.yellow .token-inner::after {
+  background: radial-gradient(circle at 42% 38%, var(--yellow) 0%, var(--yellow-token) 100%);
+}
+
+.token.blue .token-inner {
+  background: radial-gradient(circle at 42% 38%, #64d0ff 0%, var(--blue-token) 65%, #0d6faa 100%);
+}
+.token.blue .token-inner::after {
+  background: radial-gradient(circle at 42% 38%, var(--blue) 0%, var(--blue-token) 100%);
+}
+
+.token.green .token-inner {
+  background: radial-gradient(circle at 42% 38%, #a5e06a 0%, var(--green-token) 65%, #3a7a12 100%);
+}
+.token.green .token-inner::after {
+  background: radial-gradient(circle at 42% 38%, var(--green) 0%, var(--green-token) 100%);
+}
+
+.token.red .token-inner {
+  background: radial-gradient(circle at 42% 38%, #ff7f7f 0%, var(--red-token) 65%, #a81818 100%);
+}
+.token.red .token-inner::after {
+  background: radial-gradient(circle at 42% 38%, var(--red) 0%, var(--red-token) 100%);
+}
+
+.token.selectable .token-inner {
+  animation: bounce 0.5s infinite alternate;
+  cursor: pointer;
+  box-shadow: 0 0 10px 4px white;
+}
+
+@keyframes bounce {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-4px); }
+}
+
+/* Modals */
+.modal {
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 100;
+  transition: opacity 0.3s;
+}
+
+.modal.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.modal-surface {
+  background: #fff;
+  padding: 32px;
+  border-radius: 20px;
+  text-align: center;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+  min-width: 300px;
+}
+
+.modal-surface h2 {
+  margin-bottom: 16px;
+  color: var(--border-color);
+}
+
+.modal-surface button {
+  margin-top: 24px;
+  background-color: var(--red);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+}

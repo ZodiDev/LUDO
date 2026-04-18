@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Material Ludo</title>
+    <!-- Google Fonts for Typography and Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,800,0,0" rel="stylesheet" />
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- The Ludo Board -->
+        <div class="board-wrapper">
+            <div class="board" id="board">
+                <!-- Grid cells drawn securely via JS -->
+                <div id="cells-layer"></div>
+                <div id="tokens-layer"></div>
+            </div>
+        </div>
+
+        <!-- Bottom Controls (Dice + Roll Button) -->
+        <div class="bottom-controls">
+           <button id="roll-button-main" class="roll-btn">ROLL DICE</button>
+           <div class="dice-container" id="dice-container">
+               <div class="dice-face show-6" id="dice">
+                   <div class="dot"></div>
+                   <div class="dot"></div>
+                   <div class="dot"></div>
+                   <div class="dot"></div>
+                   <div class="dot"></div>
+                   <div class="dot"></div>
+                   <div class="dot"></div>
+               </div>
+           </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="winner-modal" class="modal hidden">
+        <div class="modal-surface">
+            <h2>Game Over</h2>
+            <p id="winner-text">Player wins!</p>
+            <button id="play-again-btn">Play Again</button>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="app.js"></script>
+</body>
+</html>
