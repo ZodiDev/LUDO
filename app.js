@@ -549,9 +549,36 @@ class Game {
   }
 
   showWinner(color) {
+    // Track wins if the human player won
+    const isHumanWin = color === this.humanColor;
+    if (isHumanWin) {
+      let wins = parseInt(localStorage.getItem('ludo_wins') || '0', 10);
+      wins++;
+      localStorage.setItem('ludo_wins', wins);
+      const winsEl = document.getElementById('wins-count');
+      if (winsEl) winsEl.textContent = wins;
+    }
+
     const modal = document.getElementById('winner-modal');
+    const emoji = document.getElementById('modal-emoji');
+    const title = document.getElementById('modal-title');
     const text = document.getElementById('winner-text');
-    text.textContent = `${color.toUpperCase()} WINS!`;
+    const subtitle = document.getElementById('modal-subtitle');
+
+    if (isHumanWin) {
+      emoji.textContent = '\u{1F3C6}';
+      title.textContent = 'YOU WIN!';
+      title.className = 'win-title';
+      text.textContent = 'All your pieces made it home!';
+      subtitle.textContent = 'Great game! \u{1F389}';
+    } else {
+      emoji.textContent = '\u{1F614}';
+      title.textContent = 'YOU LOST';
+      title.className = 'lose-title';
+      text.textContent = `${color.charAt(0).toUpperCase() + color.slice(1)} finished first.`;
+      subtitle.textContent = 'Better luck next time!';
+    }
+
     modal.classList.remove('hidden');
     
     document.getElementById('play-again-btn').onclick = () => {
@@ -611,6 +638,10 @@ class Game {
 
 // --- Main execution ---
 document.addEventListener('DOMContentLoaded', () => {
+  // Load persisted wins
+  const savedWins = parseInt(localStorage.getItem('ludo_wins') || '0', 10);
+  document.getElementById('wins-count').textContent = savedWins;
+
   const board = new Board();
   board.renderBoard();
   
@@ -623,5 +654,34 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('reset-btn').addEventListener('click', () => {
     game = new Game(board, dice, bot);
     game.startGame();
+  });
+
+  // --- Debug shortcuts ---
+  document.addEventListener('keydown', (e) => {
+    if (!e.ctrlKey || !e.shiftKey) return;
+
+    // Ctrl+Shift+1 → instant human (red) win
+    if (e.code === 'Digit1') {
+      e.preventDefault();
+      COLORS.forEach(color => {
+        game.state[color].forEach(t => t.steps = 0);
+      });
+      game.state[game.humanColor].forEach(t => t.steps = 57);
+      game.board.updateTokens(game.getRenderState());
+      game.showWinner(game.humanColor);
+    }
+
+    // Ctrl+Shift+2 → random bot wins
+    if (e.code === 'Digit2') {
+      e.preventDefault();
+      const bots = COLORS.filter(c => c !== game.humanColor);
+      const winner = bots[Math.floor(Math.random() * bots.length)];
+      COLORS.forEach(color => {
+        game.state[color].forEach(t => t.steps = 0);
+      });
+      game.state[winner].forEach(t => t.steps = 57);
+      game.board.updateTokens(game.getRenderState());
+      game.showWinner(winner);
+    }
   });
 });

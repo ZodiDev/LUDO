@@ -13,6 +13,12 @@
 </head>
 <body>
     <div class="app-container">
+        <!-- Stats Panel -->
+        <div class="stats-panel" id="stats-panel">
+            <span class="stats-label">🏆 WINS</span>
+            <span class="stats-value" id="wins-count">0</span>
+        </div>
+
         <!-- The Ludo Board -->
         <div class="board-wrapper">
             <div class="board" id="board">
@@ -42,8 +48,10 @@
     <!-- Modals -->
     <div id="winner-modal" class="modal hidden">
         <div class="modal-surface">
-            <h2>Game Over</h2>
+            <span class="modal-emoji" id="modal-emoji">🏆</span>
+            <h2 id="modal-title">Game Over</h2>
             <p id="winner-text">Player wins!</p>
+            <p class="modal-subtitle" id="modal-subtitle"></p>
             <button id="play-again-btn">Play Again</button>
         </div>
     </div>
