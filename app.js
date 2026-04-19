@@ -16,7 +16,7 @@ const PATH = [
   {x:0, y:7}
 ];
 
-const SAFE_SPOTS = [1, 9, 14, 22, 27, 35, 40, 48];
+const SAFE_SPOTS = [9, 22, 35, 48];
 
 const COLOR_CONFIG = {
   yellow: { // Top-Left
@@ -122,6 +122,8 @@ class Board {
 
   createTokens(gameState) {
     this.tokensLayer.innerHTML = '';
+    // Clear old tokens from base spots
+    document.querySelectorAll('.token').forEach(t => t.remove());
     
     COLORS.forEach(color => {
       for (let i = 0; i < 4; i++) {
@@ -261,9 +263,9 @@ class Dice {
     let shuffleInt = setInterval(() => {
        const r = Math.floor(Math.random() * 6) + 1;
        this.diceFace.className = `dice-face show-${r}`;
-    }, 100);
+    }, 70);
 
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise(resolve => setTimeout(resolve, 350));
 
     clearInterval(shuffleInt);
     this.diceContainer.classList.remove('rolling');
@@ -278,7 +280,7 @@ class Dice {
     }
     this.diceFace.className = `dice-face show-${result}`;
 
-    await new Promise(resolve => setTimeout(resolve, 300));
+    await new Promise(resolve => setTimeout(resolve, 200));
     
     this.isRolling = false;
     return result;
@@ -379,6 +381,7 @@ class Game {
     this.diceValue = null;
     this.hasExtraTurn = false;
     this.isMoving = false; // guard against double-clicks during animation
+    this.gameOver = false;
     
     this.state = {};
     this.initTokens();
@@ -425,6 +428,22 @@ class Game {
     this.startTurn();
   }
 
+  destroy() {
+    this.gameOver = true;
+    window.onTokenClick = null;
+    // Clean up event listeners on cloned nodes
+    const rollBtnNode = document.getElementById('roll-button-main');
+    if (rollBtnNode) {
+      const newRollBtn = rollBtnNode.cloneNode(true);
+      rollBtnNode.parentNode.replaceChild(newRollBtn, rollBtnNode);
+    }
+    const containerNode = document.getElementById('dice-container');
+    if (containerNode) {
+      const newContainer = containerNode.cloneNode(true);
+      containerNode.parentNode.replaceChild(newContainer, containerNode);
+    }
+  }
+
   nextTurn() {
     if (!this.hasExtraTurn) {
       this.turnIndex = (this.turnIndex + 1) % 4;
@@ -435,22 +454,19 @@ class Game {
   }
 
   startTurn() {
+    if (this.gameOver) return; // game already ended
     this.isMoving = false; // allow new interactions
     this.updateUI();
     const color = this.currentColor;
     this.board.setSelectable(color, []);
 
-    if (this.checkWin(color)) {
-       this.showWinner(color);
-       return;
-    }
-
     if (!this.isHumanTurn) {
-      setTimeout(() => this.bot.playTurn(this), 800);
+      setTimeout(() => this.bot.playTurn(this), 600);
     }
   }
 
   async handleRollClick() {
+    if (this.gameOver) return;
     if (!this.isHumanTurn) return;
     if (this.diceValue !== null) return; // already rolled
     if (this.isMoving) return; // animation in progress
@@ -458,6 +474,7 @@ class Game {
   }
 
   async performRoll() {
+    if (this.gameOver) return; // stop all rolls if game ended
     // Biased roll for human when all pieces are still in base: 2/6 chance of a 6
     let biasedSix = false;
     if (this.isHumanTurn) {
@@ -480,11 +497,13 @@ class Game {
 
     if (validTokens.length === 1 && !this.isHumanTurn) {
       setTimeout(async () => {
+        if (this.gameOver) return;
         await this.moveToken(color, validTokens[0]);
       }, 500);
     } 
     else if (!this.isHumanTurn) {
       setTimeout(async () => {
+        if (this.gameOver) return;
         const choice = this.bot.chooseMove(this, color, validTokens, this.diceValue);
         await this.moveToken(color, choice);
       }, 500);
@@ -493,6 +512,7 @@ class Game {
       if (validTokens.length === 1) {
          this.isMoving = true;
          setTimeout(async () => {
+           if (this.gameOver) return;
            await this.moveToken(color, validTokens[0]);
          }, 300);
       } else {
@@ -532,20 +552,24 @@ class Game {
   }
 
   async moveToken(color, index) {
+    if (this.gameOver) return;
     const token = this.state[color][index];
     const roll = this.diceValue;
 
     if (token.steps === 0 && roll === 6) {
       token.steps = 1;
       this.board.updateTokens(this.getRenderState());
-      await new Promise(r => setTimeout(r, 250));
+      await new Promise(r => setTimeout(r, 200));
     } else {
       for (let i = 0; i < roll; i++) {
+        if (this.gameOver) return;
         token.steps += 1;
         this.board.updateTokens(this.getRenderState());
-        await new Promise(r => setTimeout(r, 250));
+        await new Promise(r => setTimeout(r, 200));
       }
     }
+
+    if (this.gameOver) return;
 
     if (token.steps >= 1 && token.steps <= 51) {
       const destIndex = (COLOR_CONFIG[color].startIndex + token.steps - 1) % 52;
@@ -570,11 +594,21 @@ class Game {
       if (captured) {
         this.hasExtraTurn = true;
         this.board.updateTokens(this.getRenderState());
-        await new Promise(r => setTimeout(r, 250));
+        await new Promise(r => setTimeout(r, 200));
       }
     }
 
+    // Check win immediately after the move, for the color that just moved
+    if (this.checkWin(color)) {
+      this.gameOver = true;
+      this.board.updateTokens(this.getRenderState());
+      await new Promise(r => setTimeout(r, 300));
+      this.showWinner(color);
+      return;
+    }
+
     setTimeout(() => {
+      if (this.gameOver) return;
       this.nextTurn();
     }, 200);
   }
@@ -618,9 +652,9 @@ class Game {
     
     document.getElementById('play-again-btn').onclick = () => {
       modal.classList.add('hidden');
-      this.initTokens();
-      this.turnIndex = 0; // Reset to red (COLORS[0])
-      this.startGame();
+      this.destroy();
+      game = new Game(board, dice, bot);
+      game.startGame();
     };
   }
 
@@ -668,6 +702,12 @@ class Game {
        diceContainer.style.outline = 'none';
        diceContainer.style.cursor = 'default';
     }
+
+    // Move dice to the corner of the current player
+    COLORS.forEach(color => {
+      diceContainer.classList.remove(`dice-${color}`);
+    });
+    diceContainer.classList.add(`dice-${c}`);
   }
 }
 
@@ -686,9 +726,13 @@ document.addEventListener('DOMContentLoaded', () => {
   let game = new Game(board, dice, bot);
   game.startGame();
 
-  const resetBtn = document.getElementById('reset-btn');
-  if (resetBtn) {
-    resetBtn.addEventListener('click', () => {
+  // Restart button
+  const restartBtn = document.getElementById('restart-btn');
+  if (restartBtn) {
+    restartBtn.addEventListener('click', () => {
+      const modal = document.getElementById('winner-modal');
+      if (modal) modal.classList.add('hidden');
+      if (game) game.destroy();
       game = new Game(board, dice, bot);
       game.startGame();
     });

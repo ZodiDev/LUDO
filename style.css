@@ -54,33 +54,30 @@ body {
   padding: 12px 0;
 }
 
-/* Dice + Roll button positioned bottom-right below board */
-.bottom-controls {
-  width: 100%;
-  max-width: var(--board-size);
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  gap: 12px;
-  padding: 0 4px;
-  min-height: 48px;
-}
-
+/* Roll Button - fixed center bottom */
 .roll-btn {
-  padding: 10px 24px;
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 16px 44px;
   background-color: var(--red);
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 14px;
   font-weight: 800;
-  font-size: 16px;
+  font-size: 18px;
   cursor: pointer;
-  box-shadow: 0 4px 0 rgba(0,0,0,0.2);
-  transition: transform 0.1s, box-shadow 0.1s;
+  box-shadow: 0 4px 0 rgba(0,0,0,0.25);
+  transition: transform 0.1s, box-shadow 0.1s, background-color 0.3s;
+  letter-spacing: 0.04em;
+  min-width: 180px;
+  z-index: 45;
+  text-align: center;
 }
 
 .roll-btn:active:not(:disabled) {
-  transform: translateY(4px);
+  transform: translateX(-50%) translateY(4px);
   box-shadow: none;
 }
 
@@ -88,22 +85,63 @@ body {
   opacity: 0.5;
   cursor: not-allowed;
   box-shadow: none;
-  transform: translateY(4px);
+  transform: translateX(-50%) translateY(4px);
 }
 
+/* Dice Container - positioned relative to board corners */
 .dice-container {
-  width: 48px;
-  height: 48px;
-  flex-shrink: 0;
+  position: absolute;
+  width: 52px;
+  height: 52px;
   background-color: white;
   border: 4px solid var(--border-color);
-  border-radius: 8px;
+  border-radius: 10px;
   cursor: pointer;
   box-shadow: 2px 2px 0 rgba(0,0,0,0.2);
   display: flex;
   justify-content: center;
   align-items: center;
+  z-index: 45;
+  transition: top 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              bottom 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              left 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
+/* Red = bottom-left (below board, left side) */
+.dice-red {
+  bottom: -62px;
+  left: 4px;
+  top: auto;
+  right: auto;
+}
+
+/* Yellow = top-left (above board, left side) */
+.dice-yellow {
+  top: -62px;
+  left: 4px;
+  bottom: auto;
+  right: auto;
+}
+
+/* Blue = top-right (above board, right side) */
+.dice-blue {
+  top: -62px;
+  right: 4px;
+  bottom: auto;
+  left: auto;
+}
+
+/* Green = bottom-right (below board, right side) */
+.dice-green {
+  bottom: -62px;
+  right: 4px;
+  top: auto;
+  left: auto;
+}
+
+
+
 
 .dice-container.rolling {
   animation: shake 0.4s infinite;
@@ -442,6 +480,37 @@ body {
   align-items: center;
   gap: 6px;
   z-index: 50;
+}
+
+/* Restart Button */
+.restart-btn {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  width: 40px;
+  height: 40px;
+  background: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 10px;
+  color: white;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  z-index: 50;
+  transition: background 0.2s, transform 0.15s;
+}
+
+.restart-btn:hover {
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.restart-btn:active {
+  transform: scale(0.9);
 }
 
 .stats-label {

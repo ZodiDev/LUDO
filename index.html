@@ -19,6 +19,9 @@
             <span class="stats-value" id="wins-count">0</span>
         </div>
 
+        <!-- Restart Button -->
+        <button class="restart-btn" id="restart-btn" title="Restart Game">↻</button>
+
         <!-- The Ludo Board -->
         <div class="board-wrapper">
             <div class="board" id="board">
@@ -26,23 +29,23 @@
                 <div id="cells-layer"></div>
                 <div id="tokens-layer"></div>
             </div>
+
+            <!-- Dice - positioned relative to board corners -->
+            <div class="dice-container dice-red" id="dice-container">
+                <div class="dice-face show-6" id="dice">
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                </div>
+            </div>
         </div>
 
-        <!-- Bottom Controls (Dice + Roll Button) -->
-        <div class="bottom-controls">
-           <button id="roll-button-main" class="roll-btn">ROLL DICE</button>
-           <div class="dice-container" id="dice-container">
-               <div class="dice-face show-6" id="dice">
-                   <div class="dot"></div>
-                   <div class="dot"></div>
-                   <div class="dot"></div>
-                   <div class="dot"></div>
-                   <div class="dot"></div>
-                   <div class="dot"></div>
-                   <div class="dot"></div>
-               </div>
-           </div>
-        </div>
+        <!-- Roll Button - fixed center bottom -->
+        <button id="roll-button-main" class="roll-btn">🎲 ROLL DICE</button>
     </div>
 
     <!-- Modals -->
